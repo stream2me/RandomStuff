@@ -12,9 +12,9 @@
 #include "../rc-switch/RCSwitch.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 /* for options */
-#include <unistd.h>
 #include <getopt.h>
 #include <strings.h>
 
@@ -26,15 +26,14 @@
  * -h host
  * -p port
  * -u mqtt username
- * -x pasword 
+ * -x password 
  * -t topic
  * -w pulsewith
+ * -id Client_ID
  * -n help
  */
 
 RCSwitch mySwitch;
-
-
 
 int main(int argc, char *argv[]) {
 
@@ -50,17 +49,19 @@ int main(int argc, char *argv[]) {
     char  MQTT_USERTNAME[] = "admin\0";
     char  MQTT_PASSWORD[] = "password\0";
     char  MQTT_TOPIC[]    = "433MHz\0";
+	char  CLIENT_ID[] = "RFsniffer\0";
 
     char* host = MQTT_HOSTNAME; 
     int port   = 1883;
     char* usr  = MQTT_USERTNAME; 
     char* pswd = MQTT_PASSWORD; 
     char* topic= MQTT_TOPIC;
+    char* client_id = CLIENT_ID;
 
    /* parse input parameter */
    int opt;
    opterr = 0;
-    while ((opt = getopt(argc, argv, "g:h:p:u:x:t:n")) != -1) {
+    while ((opt = getopt(argc, argv, "g:h:p:u:x:t:id:n")) != -1) {
             switch (opt) {
             case 'h':
                  host = optarg;
@@ -83,16 +84,19 @@ int main(int argc, char *argv[]) {
             case 'w':
                 pulseLength = atoi(optarg);
                 break;
+            case 'id':
+                client_id = optarg;
+                break;				
             case 'n':
-                fprintf (stdout,"Usage: %s [-h Host] [-p Port] [-u username] [-x password] [-t topic] [-g WiringPI GPIO] [-w pulsewith]\n",
+                fprintf (stdout,"Usage: %s [-h Host] [-p Port] [-u username] [-x password] [-t topic] [-g WiringPI GPIO] [-id Client_ID] [-w pulsewith]\n",
                         argv[0]);
                 exit(0);
                 break;
             }
         }
 
-     fprintf (stdout,"Running with -h %s -p %i -u %s -x %s -t %s -g %i -w %i\n",
-                     host, port, usr ,pswd , topic, pin , pulseLength ); 
+     fprintf (stdout,"Running with -h %s -p %i -u %s -x %s -t %s -g %i -id %i -w %i\n",
+                     host, port, usr, pswd, topic, pin, Client_ID, pulseLength ); 
 
 
 
@@ -101,15 +105,17 @@ int main(int argc, char *argv[]) {
     // Initialize the Mosquitto library
     mosquitto_lib_init();
 
-    // Create a new Mosquitto runtime instance with a random client ID,
-    //  and no application-specific callback data.  
-    mosq = mosquitto_new (NULL, true, NULL);
+    // Create a new Mosquitto runtime instance with optional client ID(default is RFsniffer),
+    //  and no application-specific callback data. 
+
+    mosq = mosquitto_new (client_id, true, NULL);
+
     if (!mosq)
     {
       fprintf (stderr, "Can't initialize Mosquitto library\n");
       exit (-1);
     }
-    
+	
     mosquitto_username_pw_set (mosq, usr, pswd);
 
     // Establish a connection to the MQTT server. Do not use a keep-alive ping
@@ -145,7 +151,10 @@ int main(int argc, char *argv[]) {
           if (ret)
           {
             fprintf (stderr,"Can't publish to Mosquitto server\n");
-            exit (-1);
+            // if mqtt-server is not available try reconnect after selected time
+			fprintf (stderr, "Retry in one minute\n");
+            sleep (60);
+            mosquitto_reconnect (mosq);
           }else 
           {
             fprintf (stdout,"Received %s\n", valueStr );
@@ -163,4 +172,3 @@ int main(int argc, char *argv[]) {
   
   exit(0);
 }
-
