@@ -113,10 +113,14 @@ ExecStart=/home/pi/433Utils/RPi_utils/RFmqtt [-h Host] [-p Port] [-u username] [
 
 To run a watchdog for the service copy "RFmqtt-wd.sh" to somewhere.
 Make it executable (chmod +x RFmqtt-wd.sh)
-Add cronjob for the watchdog.
+Add cronjob for the watchdog:
+
 sudo crontab -e
+
 To run it every 5 minutes add:
+
 */5 * * * * /home/pi/433Utils/RPi_utils/RFmqtt-wd.sh
+
 to crontab.
 
 
