@@ -45,7 +45,7 @@ sudo apt-get install mosquitto
 
 after that just compile it ( this expects you followed all steps necccessary to compile the RPI_utils previously).
 ```bash
-sodu make
+sudo make
 ```
 
 It can be configured as follows
@@ -79,7 +79,7 @@ After=mosquitto.service
 [Service]
 Type=simple
 user=root
-ExecStart=/home/pi/SourceCode/433Utils/RPi_utils/RFmqtt
+ExecStart=/home/pi/433Utils/RPi_utils/RFmqtt
 
 [Install]
 WantedBy=multi-user.target
@@ -108,5 +108,17 @@ sudo systemctl status RFmqtt.service
 
 You can also define paramter in the RFmqtt.service at startup.
 ```
-ExecStart=/home/pi/SourceCode/433Utils/RPi_utils/RFmqtt [-h Host] [-p Port] [-u username] [-x password] [-t topic] [-g WiringPI GPIO] [-w pulsewith]
+ExecStart=/home/pi/433Utils/RPi_utils/RFmqtt [-h Host] [-p Port] [-u username] [-x password] [-t topic] [-g WiringPI GPIO] [-w pulsewith]
 ```
+
+To run a watchdog for the service copy "RFmqtt-wd.sh" to somewhere.
+Make it executable (chmod +x RFmqtt-wd.sh)
+Add cronjob for the watchdog.
+sudo crontab -e
+To run it every 5 minutes add:
+*/5 * * * * /home/pi/433Utils/RPi_utils/RFmqtt-wd.sh
+to crontab.
+
+
+
+
